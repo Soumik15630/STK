@@ -33,7 +33,7 @@ enum class TokenType {
     Nhi_Tou,//else
     Until,//while
     Give_Back,//return
-    See,//print
+    Dikhao,//print
     Add_and_TakeMe,//"+="
     Sub_and_TakeMe,//"-="
     Mul_and_TakeMe,//"*="
