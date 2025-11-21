@@ -94,4 +94,87 @@ void Lexer::scan_token(){
     }
 
 }
+
+void Lexer::skip_whitespaces_and_comments(){
+    while (true){
+        char c = peek();
+        switch (c){
+            case ' ' :
+            case '\r' :
+            case '\t' :
+                advance();
+                break;
+            case '\n' : 
+                line++ ;
+                advance();
+                break;
+            case '/' :
+                if (peek_next()=='/'){
+                    while(!is_at_end() && peek()=='/'){
+                        advance();
+                    }
+
+                }else if (peek_next()== '*'){
+                    advance();
+                    advance(); // consuming '/*'
+                    while (!is_at_end()){
+                        if (peek()=='\n'){
+                            line++;
+                        }else if (peek() == '*' && peek_next() == '/'){
+                            advance();
+                            advance();
+                            break;
+                        }
+                        advance();
+                    }
+                    
+                }else {
+                    return;
+                }
+                break;
+            default : return;
+        }
+    }
+    
+}
  
+void Lexer::identifier(){
+    while (isalnum(peek() || peek()== '_')){
+        advance();
+    }
+    std::string_view text = src.substr(start, current_index-start);
+    TokenType type = TokenType::Aadhar;
+    
+    auto it = keywords.find(text);
+    if (it != keywords.end()){
+        type = it->second;
+
+    }
+    add_token(type);
+}
+
+void Lexer::number(){
+    while (isdigit(peek())){
+        advance();
+        if (peek()=='.' && isdigit(peek_next())){
+            advance();
+            while (isdigit(peek())){
+                advance();
+            }
+        }
+        if (peek() == 'e' || peek() == 'E'){
+            advance();
+            if (!isdigit(peek())){
+                report_error("Expected exponent.");
+
+            }
+            while(isdigit(peek())){
+                advance();
+            }
+        }
+        add_token(TokenType::Num , src.substr(start, current_index-start));
+    }
+
+}
+
+
