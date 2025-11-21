@@ -12,16 +12,17 @@ enum class TokenType {
     Dot, 
     SemiColon,
     Colon,
+    Niche_ka_part,//"%"
     Addition,//"+" 
     Subtraction,//"-" 
     Taare,//"*"
     Inclined_Tower,//"/"
     Take_Me,//"=" 
-    Huh,//"!"
+    Not,//"!"
     Chota,//"<"
     Bada,//">"
     Same_Same,//"=="
-    Huh_same,//"!="
+    Not_same,//"!="
     Smaller_or_same,//<="smaller equal to"
     Bigger_or_same,//>="greater equal to"
     Aadhar,//identify of variables or constans anything
@@ -43,13 +44,12 @@ enum class TokenType {
     Sach,//true
     Jhoot,//false
     Khaali,//null, none, nothing
-    Niche_ka_part,//"%"
     Breakup,//break
     Patchup,//continue
     For, //loop
     Switch,
     Case,
-    Default_It,
+    Default,
     Int_Type,
     String_Type,
     Bool_Type,
