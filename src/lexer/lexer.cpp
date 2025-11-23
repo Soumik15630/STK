@@ -20,7 +20,7 @@ static const std::unordered_map<std::string_view , TokenType> keywords ={
     {"case", TokenType::Case},
     {"default", TokenType::Default},
     {"int", TokenType::Int_Type},
-    {"string", TokenType::String_Type},
+    {"string", TokenType::String},
     {"bool", TokenType::Bool_Type},
     {"float", TokenType::Float_Type}
 
@@ -177,4 +177,45 @@ void Lexer::number(){
 
 }
 
+void Lexer::string_literal(){
+    std::string value = "";
+
+    while (peek()!= '"' && !is_at_end()){
+        if (peek()=='\n'){
+            line++;
+        }
+        if (peek()=='\\'){
+            advance();
+            switch (peek()){
+                case 'n' : value +='\n';break;
+                case 't' : value += '\t';break;
+                case 'r' : value += '\r';break;
+                case '\\' : value += '\\';break;
+                case '"' : value += '"';break;
+                
+            }
+            advance();
+        }else{
+            value += advance();
+        } 
+        
+    }
+    if (is_at_end){
+        report_error("Expected ending String indentation");
+        return;
+    }
+    add_token(TokenType::String , std::move(value));
+}
+
+bool Lexer::same(char ex){
+    if (is_at_end()){
+        return false;
+    }
+    if (src[current_index]!= ex){
+        return false;
+
+    }
+    current_index++;
+    return true;
+}
 

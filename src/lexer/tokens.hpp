@@ -51,7 +51,6 @@ enum class TokenType {
     Case,
     Default,
     Int_Type,
-    String_Type,
     Bool_Type,
     Float_Type, 
     Break_Point//end of the file 
