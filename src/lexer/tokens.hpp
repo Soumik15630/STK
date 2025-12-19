@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <utility>
 
 enum class TokenType {
     Left_Karen,//"(" 
@@ -52,13 +53,13 @@ enum class TokenType {
     Default,
     Int_Type,
     Bool_Type,
-    Float_Type, 
+    Float_Type,
     Break_Point//end of the file 
 };
 struct Token {
     TokenType type;
     std::string pickme;   
     int line;             
-    Token(TokenType t, const std::string& me, int ln)
-        : type(t), pickme(me), line(ln) {}
+    Token(TokenType t, std::string  me, int ln)
+        : type(t), pickme(std::move(me)), line(ln) {}
 };

@@ -1,8 +1,23 @@
-#include <lexer.hpp>
+#include "lexer.hpp"
 #include <iostream>
 #include <cctype>
 
-static const std::unordered_map<std::string_view , TokenType> keywords ={
+
+inline bool is_alpha(char c)
+{
+    return std::isalpha(static_cast<unsigned char>(c));
+}
+
+inline bool is_digit(char c)
+{
+    return std::isdigit((static_cast<unsigned char>(c)));
+}
+
+inline bool is_alnum(char c)
+{
+    return std::isalnum(static_cast<unsigned char>(c));
+}
+const std::unordered_map<std::string_view , TokenType> Lexer::keywords ={
     {"let" , TokenType::Assume},
     {"function" , TokenType::Function},
     {"if", TokenType::Agar},
@@ -42,14 +57,14 @@ std::vector<Token> Lexer::tokenize(){
 }
 
 void Lexer::scan_token(){
-    char c = advance();
-    switch(c){
+    switch(const char c = advance()){
         
         case '(' : add_token(TokenType::Left_Karen); break;
         case ')' : add_token(TokenType::Right_Karen); break;
         case '{' : add_token(TokenType::Left_Curly_Brace); break;
         case '}' : add_token(TokenType::Right_Curly_Brace); break;
         case '[' : add_token(TokenType::Left_Box_Brace); break;
+        case ']' : add_token(TokenType::Right_Box_Brace); break;
         case ',' : add_token(TokenType::Comma); break;
         case '.' : add_token(TokenType::Dot); break;
         case ';' : add_token(TokenType::SemiColon); break;
@@ -82,7 +97,7 @@ void Lexer::scan_token(){
         case '"' : string_literal(); break;
         
         default : 
-            if (isdigit(c)){
+            if (is_digit(c)){
                 number();
             }else if (isalpha(c) || c == '_' ){
                 identifier();
@@ -97,8 +112,7 @@ void Lexer::scan_token(){
 
 void Lexer::skip_whitespaces_and_comments(){
     while (true){
-        char c = peek();
-        switch (c){
+        switch (peek()){
             case ' ' :
             case '\r' :
             case '\t' :
@@ -110,24 +124,30 @@ void Lexer::skip_whitespaces_and_comments(){
                 break;
             case '/' :
                 if (peek_next()=='/'){
-                    while(!is_at_end() && peek()=='/'){
+                    while(!is_at_end() && peek()!='\n'){
                         advance();
                     }
 
                 }else if (peek_next()== '*'){
                     advance();
                     advance(); // consuming '/*'
+                    bool closed = false;
                     while (!is_at_end()){
                         if (peek()=='\n'){
                             line++;
                         }else if (peek() == '*' && peek_next() == '/'){
                             advance();
                             advance();
+                            closed = true;
                             break;
                         }
                         advance();
                     }
-                    
+                        if (!closed)
+                        {
+                            report_error(("Unterminated Block Comment."));
+                        }
+
                 }else {
                     return;
                 }
@@ -139,7 +159,7 @@ void Lexer::skip_whitespaces_and_comments(){
 }
  
 void Lexer::identifier(){
-    while (isalnum(peek() || peek()== '_')){
+    while (is_alnum(peek()) || peek()== '_'){
         advance();
     }
     std::string_view text = src.substr(start, current_index-start);
@@ -154,26 +174,32 @@ void Lexer::identifier(){
 }
 
 void Lexer::number(){
-    while (isdigit(peek())){
+    while (is_digit(peek()))
+    {
         advance();
-        if (peek()=='.' && isdigit(peek_next())){
+    }
+        if (peek()=='.' && is_digit(peek_next())){
             advance();
-            while (isdigit(peek())){
+            while (is_digit(peek())){
                 advance();
             }
         }
         if (peek() == 'e' || peek() == 'E'){
             advance();
-            if (!isdigit(peek())){
+            if (peek() == '+' || peek() == '-')
+            {
+                advance();
+            }
+            if (!is_digit(peek())){
                 report_error("Expected exponent.");
 
             }
-            while(isdigit(peek())){
+            while(is_digit(peek())){
                 advance();
             }
         }
-        add_token(TokenType::Num , src.substr(start, current_index-start));
-    }
+        add_token_literal(TokenType::Num , src.substr(start, current_index-start));
+
 
 }
 
@@ -192,7 +218,10 @@ void Lexer::string_literal(){
                 case 'r' : value += '\r';break;
                 case '\\' : value += '\\';break;
                 case '"' : value += '"';break;
-                
+            default :
+                report_error(("Invalid Escape Sequence."));
+                value+= peek();
+                break;
             }
             advance();
         }else{
@@ -200,11 +229,12 @@ void Lexer::string_literal(){
         } 
         
     }
-    if (is_at_end){
+    if (is_at_end()){
         report_error("Expected ending String indentation");
         return;
     }
-    add_token(TokenType::String , std::move(value));
+    advance();
+    add_token_string(TokenType::String , std::move(value));
 }
 
 bool Lexer::same(char ex){
@@ -218,4 +248,52 @@ bool Lexer::same(char ex){
     current_index++;
     return true;
 }
+char Lexer::peek() const{
+    if (is_at_end())
+    {
+        return '\0';
+    }
+    return src[current_index];
+}
+
+char  Lexer::peek_next() const
+{
+    if (current_index+1 >= src.length()){return '\0';}
+    return src[current_index +1];
+}
+
+char Lexer::advance()
+{
+    return src[current_index++];
+}
+
+bool Lexer::is_at_end() const
+{
+    return (current_index >= src.length());
+}
+
+void Lexer::add_token(TokenType type)
+{
+    const std::string_view text = src.substr(start , current_index-start);
+    tokens.emplace_back(type , std::string(text), line);
+}
+
+void Lexer::add_token_literal(TokenType type, const std::string_view me)
+{
+    tokens.emplace_back(type , std::string(me), line);
+}
+
+void Lexer::add_token_string(TokenType type,   std::string&& me)
+{
+    tokens.emplace_back(type , std::move(me), line);
+}
+
+void Lexer::report_error(const std::string& message)
+{
+    had_error = true;
+    std::cerr<<"[Line" << line << "] Error : " << message << std::endl;
+
+}
+
+
 
