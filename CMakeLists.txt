@@ -7,11 +7,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Define your source files here
 set(SOURCES
         src/...
-        src/lexer/main.cpp
         src/lexer/lexer.cpp
         src/lexer/lexer.hpp
         src/lexer/tokens.hpp
         src/ast/ast.hpp
+        waste.cpp
 )
 
 # FIXED: Renamed target from 'STK' back to 'Cpp' to match your build configuration

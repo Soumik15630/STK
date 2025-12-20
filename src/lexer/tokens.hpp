@@ -33,6 +33,7 @@ enum class TokenType {
     Function,
     Agar,//if
     Nhi_Tou,//else
+    Do,
     Until,//while
     Give_Back,//return
     Dikhao,//print

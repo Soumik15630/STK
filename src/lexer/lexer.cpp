@@ -23,6 +23,7 @@ const std::unordered_map<std::string_view , TokenType> Lexer::keywords ={
     {"if", TokenType::Agar},
     {"else", TokenType::Nhi_Tou},
     {"while", TokenType::Until},
+    {"do", TokenType::Do},
     {"return", TokenType::Give_Back},
     {"print", TokenType::Dikhao},
     {"true", TokenType::Sach},
