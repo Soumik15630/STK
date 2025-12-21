@@ -67,42 +67,66 @@ std::vector<Token> Lexer::tokenize(){
 void Lexer::scan_token(){
     switch(const char c = advance()){
         
-        case '(' : add_token(TokenType::Left_Karen); break;
-        case ')' : add_token(TokenType::Right_Karen); break;
-        case '{' : add_token(TokenType::Left_Curly_Brace); break;
-        case '}' : add_token(TokenType::Right_Curly_Brace); break;
-        case '[' : add_token(TokenType::Left_Box_Brace); break;
-        case ']' : add_token(TokenType::Right_Box_Brace); break;
-        case ',' : add_token(TokenType::Comma); break;
-        case '.' : add_token(TokenType::Dot); break;
-        case ';' : add_token(TokenType::SemiColon); break;
-        case ':' : add_token(TokenType::Colon); break;
-        case '%' : add_token(TokenType::Niche_ka_part); break;
-        case '+' : add_token(same('=') ? TokenType::Add_and_TakeMe : TokenType::Addition); break;
-        case '-' : add_token(same('=') ? TokenType::Sub_and_TakeMe : TokenType::Subtraction); break;
-        case '*' : add_token(same('=') ? TokenType::Mul_and_TakeMe : TokenType::Taare); break;
-        case '/' : add_token(same('=') ? TokenType::Div_and_TakeMe : TokenType::Inclined_Tower); break;
-        case '=' : add_token(same('=') ? TokenType::Same_Same : TokenType::Take_Me); break;
-        case '!' : add_token(same('=') ? TokenType::Not_same : TokenType::Not); break;
-        case '<' : add_token(same('=') ? TokenType::Smaller_or_same : TokenType::Chota); break;
-        case '>' : add_token(same('=') ? TokenType::Bigger_or_same : TokenType::Bada); break;
+        case '(' : add_symbol(TokenType::Left_Karen); break;
+        case ')' : add_symbol(TokenType::Right_Karen); break;
+        case '{' : add_symbol(TokenType::Left_Curly_Brace); break;
+        case '}' : add_symbol(TokenType::Right_Curly_Brace); break;
+        case '[' : add_symbol(TokenType::Left_Box_Brace); break;
+        case ']' : add_symbol(TokenType::Right_Box_Brace); break;
+        case ',' : add_symbol(TokenType::Comma); break;
+        case '.' : add_symbol(TokenType::Dot); break;
+        case ';' : add_symbol(TokenType::SemiColon); break;
+        case ':' : add_symbol(TokenType::Colon); break;
+        case '%' : add_symbol(TokenType::Niche_ka_part); break;
+        case '+' : add_symbol(same('=') ? TokenType::Add_and_TakeMe : TokenType::Addition); break;
+        case '-' : add_symbol(same('=') ? TokenType::Sub_and_TakeMe : TokenType::Subtraction); break;
+        case '*' : add_symbol(same('=') ? TokenType::Mul_and_TakeMe : TokenType::Taare); break;
+        case '/' : add_symbol(same('=') ? TokenType::Div_and_TakeMe : TokenType::Inclined_Tower); break;
+        case '=' : add_symbol(same('=') ? TokenType::Same_Same : TokenType::Take_Me); break;
+        case '!' : add_symbol(same('=') ? TokenType::Not_same : TokenType::Not); break;
         case '&' : 
             if (same('&')){
-                add_token(TokenType::Couples);
+                add_symbol(TokenType::Couples);
             }
             else {
-                report_error("Unexpected Character '&'.");
+                add_symbol(TokenType::Bitwise_and);
             }
             break;
         case '|' : 
             if (same('|')){
-                add_token(TokenType::Twin_Tower);
+                add_symbol(TokenType::Twin_Tower);
             }
             else {
-                report_error("Unexpected Character '|'.");
+                add_symbol(TokenType::Bitwise_or);
+            }
+            break;
+        case '<' :
+            if (same('=')){
+                add_symbol(TokenType::Smaller_or_same);
+            }
+            else if (same('<')) {
+                add_symbol(TokenType::Left_shift);
+            }
+            else
+            {
+                add_symbol(TokenType::Chota);
+            }
+            break;
+        case '>' :
+            if (same('=')){
+                add_symbol(TokenType::Bigger_or_same);
+            }
+            else if (same('>'))
+            {
+                add_symbol(TokenType::Right_shift);
+            }
+            else {
+                add_symbol(TokenType::Bada);
             }
             break;
         case '"' : string_literal(); break;
+        case '^' : add_symbol(TokenType::Bitwise_xor); break;
+        case '~' : add_symbol(TokenType::Bitwise_not); break;
         
         default : 
             if (is_digit(c)){
@@ -170,15 +194,17 @@ void Lexer::identifier(){
     while (is_alnum(peek()) || peek()== '_'){
         advance();
     }
-    std::string_view text = src.substr(start, current_index-start);
-    TokenType type = TokenType::Aadhar;
-    
-    auto it = keywords.find(text);
-    if (it != keywords.end()){
-        type = it->second;
+    const std::string_view text = src.substr(start, current_index-start);
+    auto type = TokenType::Aadhar;
 
+    if (const auto it = keywords.find(text); it != keywords.end()){
+        type = it->second;
+        add_symbol(type);
+
+    }else
+    {
+        add_token(type);
     }
-    add_token(type);
 }
 
 void Lexer::number(){
@@ -200,6 +226,7 @@ void Lexer::number(){
             }
             if (!is_digit(peek())){
                 report_error("Expected exponent.");
+                return;
 
             }
             while(is_digit(peek())){
@@ -284,6 +311,11 @@ void Lexer::add_token(TokenType type)
 {
     const std::string_view text = src.substr(start , current_index-start);
     tokens.emplace_back(type , std::string(text), line);
+}
+
+void Lexer::add_symbol(TokenType type)
+{
+    tokens.emplace_back(type, "", line);
 }
 
 void Lexer::add_token_literal(TokenType type, const std::string_view me)

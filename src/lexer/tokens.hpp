@@ -43,6 +43,12 @@ enum class TokenType {
     Div_and_TakeMe,//"/="
     Couples,//"&&"
     Twin_Tower,//"||"
+    Bitwise_or,
+    Bitwise_and,
+    Bitwise_xor,//^
+    Bitwise_not,//~
+    Left_shift,
+    Right_shift,
     Sach,//true
     Jhoot,//false
     Khaali,//null, none, nothing

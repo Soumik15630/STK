@@ -31,6 +31,7 @@ private:
     void number();
     void identifier();
     void add_token(TokenType type);
+    void add_symbol(TokenType type);
     void add_token_literal(TokenType type,   std::string_view me);
     void add_token_string(TokenType type,     std::string&& me);
     void report_error(const std::string &message);
