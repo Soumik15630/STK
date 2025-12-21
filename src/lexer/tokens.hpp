@@ -54,6 +54,13 @@ enum class TokenType {
     Default,
     Int_Type,
     Bool_Type,
+    Class,
+    Inherit,
+    This,
+    New,
+    Public,
+    Private,
+    Protected,
     Float_Type,
     Break_Point//end of the file 
 };

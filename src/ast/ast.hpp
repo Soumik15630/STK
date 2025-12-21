@@ -17,6 +17,9 @@ struct Return_stmt;
 struct Switch_stmt;
 struct Print_stmt;
 struct Break_stmt;
+struct Field_stmt;
+struct Method_stmt;
+struct Class_stmt;
 struct Continue_stmt;
 struct Binary_expr;
 struct Logical_expr;
@@ -24,6 +27,9 @@ struct Unary_expr;
 struct Literal_expr;
 struct Variable_expr;
 struct Assign_expr;
+struct Member_expr;
+struct This_expr;
+struct New_expr;
 struct Call_expr;
 struct Array_expr;
 struct Index_expr;
@@ -32,6 +38,8 @@ struct Vector_type;
 struct Array_type;
 struct Pointer_type;
 struct Reference_type;
+struct Class_type;
+
 
 class Visitor
 {
@@ -59,6 +67,19 @@ public:
     virtual void visit(Call_expr& expr) = 0;
     virtual void visit(Array_expr& expr) = 0;
     virtual void visit(Index_expr& expr) = 0;
+    virtual void visit(Class_stmt& stmt) = 0;
+    virtual void visit(Field_stmt& stmt) = 0;
+    virtual void visit(Method_stmt& stmt) = 0;
+    virtual void visit(Member_expr& expr) = 0;
+    virtual void visit(This_expr& expr) = 0;
+    virtual void visit(New_expr& expr) = 0;
+    virtual void visit(Primitive_type& type) = 0;
+    virtual void visit(Array_type& type) = 0;
+    virtual void visit(Vector_type& type) = 0;
+    virtual void visit(Pointer_type& type) = 0;
+    virtual void visit(Reference_type& type) = 0;
+    virtual void visit(Class_type& type) = 0;
+
 
 };
 
@@ -77,6 +98,22 @@ struct Expr
 struct Type
 {
     virtual ~Type() = default;
+    virtual void accept(Visitor& v ) = 0;
+};
+
+struct Param
+{
+    Token name;
+    std::unique_ptr<Type> type;
+    Param(Token n , std::unique_ptr<Type> t) : name(std::move(n)), type(std::move(t)){}
+
+};
+
+enum class Access_level
+{
+    Public,
+    Protected,
+    Private
 };
 
 struct Block_stmt : Stmt
@@ -89,26 +126,27 @@ struct Block_stmt : Stmt
 struct Var_stmt : Stmt
 {
     Token name;
-    std::unique_ptr<Type> Type;
+    std::unique_ptr<Type> type;
     std::unique_ptr<Expr> initializer;
 
-    Var_stmt(Token n , std::unique_ptr<struct Type> t , std::unique_ptr<Expr> init) : name(std::move(n)) , Type(std::move(t)), initializer(std::move(init)){}
+    Var_stmt(Token n , std::unique_ptr<Type> t , std::unique_ptr<Expr> init) : name(std::move(n)) , type(std::move(t)), initializer(std::move(init)){}
     void accept(Visitor& v) override {v.visit(*this);}
 
 };
 struct Func_stmt : Stmt
 {
     Token name;
-    std::vector<Token> params;
+    std::vector<Param> params;
+    std::unique_ptr<Type> return_type;
     std::vector<std::unique_ptr<Stmt>> body;
-    Func_stmt(Token n , std::vector<Token> p , std::vector<std::unique_ptr<Stmt>> b) : name(std::move(n)), params(std::move(p)) , body(std::move(b)) {}
+    Func_stmt(Token n , std::vector<Param> p ,std::unique_ptr<Type> r, std::vector<std::unique_ptr<Stmt>> b) : name(std::move(n)), params(std::move(p)) ,return_type(std::move(r)), body(std::move(b)) {}
     void accept(Visitor& v) override {v.visit(*this);};
 };
 
 struct Expr_stmt : Stmt
 {
-    std::unique_ptr<Stmt> expression;
-    Expr_stmt(std::unique_ptr<Stmt> e) : expression(std::move(e)) {}
+    std::unique_ptr<Expr> expression;
+    explicit Expr_stmt(std::unique_ptr<Expr> e) : expression(std::move(e)) {}
     void accept(Visitor& v) override {v.visit(*this);};
 };
 
@@ -197,6 +235,38 @@ struct Continue_stmt : Stmt
     void accept(Visitor& v) override {v.visit(*this);};
 };
 
+struct Field_stmt : Stmt
+{
+    Access_level access;
+    Token name;
+    std::unique_ptr<Type> type;
+    std::unique_ptr<Expr> initializer;
+
+    Field_stmt(Access_level a , Token n, std::unique_ptr<Type> t, std::unique_ptr<Expr> i) : access(a), name(std::move(n)), type(std::move(t)), initializer(std::move(i)) {}
+    void accept(Visitor& v) override {v.visit(*this);};
+};
+
+struct Method_stmt : Stmt
+{
+    Access_level access;
+    Token name;
+    std::vector<Param> params;
+    std::unique_ptr<Type> return_type;
+    std::vector<std::unique_ptr<Stmt>> body;
+
+    Method_stmt(Access_level a, Token n, std::vector<Param> p, std::unique_ptr<Type> r, std::vector<std::unique_ptr<Stmt>> b) : access(a), name(std::move(n)), params(std::move(p)),return_type(std::move(r)), body(std::move(b)) {}
+    void accept(Visitor& v) override {v.visit(*this);};
+};
+
+struct Class_stmt : Stmt
+{
+    Token name;
+    std::vector<Token> base_Classes;
+    std::vector<std::unique_ptr<Stmt>> members;
+    Class_stmt(Token n, std::vector<Token> b, std::vector<std::unique_ptr<Stmt>> m) : name(std::move(n)), base_Classes(std::move(b)), members(std::move(m)) {}
+    void accept(Visitor& v) override {v.visit(*this);};
+};
+
 struct Binary_expr : Expr
 {
     std::unique_ptr<Expr> left;
@@ -278,11 +348,38 @@ struct Index_expr : Expr
     void accept(Visitor& v) override {v.visit(*this);};
 };
 
+struct Member_expr : Expr
+{
+    std::unique_ptr<Expr> object;
+    Token member;
+
+    Member_expr(std::unique_ptr<Expr> o , Token m) : object(std::move(o)) , member(std::move(m)) {}
+    void accept(Visitor& v) override {v.visit(*this);};
+};
+
+struct This_expr : Expr
+{
+    Token keyword;
+
+    explicit This_expr(Token k) : keyword(std::move(k)){}
+    void accept(Visitor& v) override {v.visit(*this);};
+};
+
+struct New_expr : Expr
+{
+    Token class_name;
+    std::vector<std::unique_ptr<Expr>> arguments;
+
+    New_expr(Token c, std::vector<std::unique_ptr<Expr>> a) : class_name(std::move(c)), arguments(std::move(a)) {}
+
+    void accept(Visitor& v) override {v.visit(*this);};
+};
+
 struct Primitive_type : Type
 {
     TokenType kind;
     explicit Primitive_type(TokenType k) : kind(k){}
-
+    void accept(Visitor& v) override {v.visit(*this);};
 };
 
 struct Vector_type : Type
@@ -290,7 +387,7 @@ struct Vector_type : Type
     std::unique_ptr<Type> element_type;
     explicit Vector_type(std::unique_ptr<Type> e) : element_type(std::move(e)){}
 
-
+    void accept(Visitor& v) override {v.visit(*this);};
 };
 
 struct Array_type : Type
@@ -299,19 +396,27 @@ struct Array_type : Type
     size_t size;
 
     Array_type(std::unique_ptr<Type> e, size_t s) : element_type(std::move(e)), size(s) {}
-
+    void accept(Visitor& v) override {v.visit(*this);};
 };
 
 struct Pointer_type : Type
 {
     std::unique_ptr<Type> pointe;
     explicit Pointer_type(std::unique_ptr<Type> p) : pointe(std::move(p)) {}
-
+    void accept(Visitor& v) override {v.visit(*this);};
 };
 
 struct Reference_type : Type
 {
     std::unique_ptr<Type> refer;
     explicit Reference_type(std::unique_ptr<Type> r) : refer(std::move(r)) {}
-
+    void accept(Visitor& v) override {v.visit(*this);};
 };
+
+struct Class_type : Type
+{
+    Token name;
+    explicit Class_type(Token n) : name(std::move(n)) {}
+    void accept(Visitor& v) override {v.visit(*this);};
+};
+

@@ -38,7 +38,14 @@ const std::unordered_map<std::string_view , TokenType> Lexer::keywords ={
     {"int", TokenType::Int_Type},
     {"string", TokenType::String},
     {"bool", TokenType::Bool_Type},
-    {"float", TokenType::Float_Type}
+    {"float", TokenType::Float_Type},
+    {"class" , TokenType::Class},
+    {"Inherit", TokenType::Inherit},
+    {"This" , TokenType::This},
+    {"New", TokenType::New},
+    {"Public", TokenType::Public},
+    {"Private" , TokenType::Private},
+    {"Protected", TokenType::Protected}
 
 };
 
@@ -205,7 +212,7 @@ void Lexer::number(){
 }
 
 void Lexer::string_literal(){
-    std::string value = "";
+    std::string value;
 
     while (peek()!= '"' && !is_at_end()){
         if (peek()=='\n'){
