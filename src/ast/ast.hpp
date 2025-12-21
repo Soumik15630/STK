@@ -4,7 +4,6 @@
 #include <vector>
 #include <memory>
 #include <string>
-#include <optional>
 
 struct Block_stmt;
 struct Var_stmt;
@@ -28,6 +27,11 @@ struct Assign_expr;
 struct Call_expr;
 struct Array_expr;
 struct Index_expr;
+struct Primitive_type;
+struct Vector_type;
+struct Array_type;
+struct Pointer_type;
+struct Reference_type;
 
 class Visitor
 {
@@ -70,20 +74,25 @@ struct Expr
     virtual void accept(Visitor& v) = 0;
 };
 
+struct Type
+{
+    virtual ~Type() = default;
+};
+
 struct Block_stmt : Stmt
 {
     std::vector<std::unique_ptr<Stmt>> statements;
-    Block_stmt(std::vector<std::unique_ptr<Stmt>> statement) : statements(std::move(statement)) {}
+    explicit Block_stmt(std::vector<std::unique_ptr<Stmt>> statement) : statements(std::move(statement)) {}
     void accept(Visitor& v) override {v.visit(*this);}
 };
 
 struct Var_stmt : Stmt
 {
     Token name;
-    std::optional<Token> Type;
+    std::unique_ptr<Type> Type;
     std::unique_ptr<Expr> initializer;
 
-    Var_stmt(Token n , std::optional<Token> t , std::unique_ptr<Expr> init) : name(std::move(n)) , Type(std::move(t)), initializer(std::move(init)){}
+    Var_stmt(Token n , std::unique_ptr<struct Type> t , std::unique_ptr<Expr> init) : name(std::move(n)) , Type(std::move(t)), initializer(std::move(init)){}
     void accept(Visitor& v) override {v.visit(*this);}
 
 };
@@ -150,3 +159,159 @@ struct Switch_Case
     Switch_Case(std::vector<std::unique_ptr<Expr>> vals, std::vector<std::unique_ptr<Stmt>> b) : values(std::move(vals)), body(std::move(b)) {}
 };
 
+struct Switch_stmt : Stmt
+{
+    std::unique_ptr<Expr> condition;
+    std::vector<Switch_Case> cases;
+    std::vector<std::unique_ptr<Stmt>> default_branch;
+    Switch_stmt(std::unique_ptr<Expr> c, std::vector<Switch_Case> cs , std::vector<std::unique_ptr<Stmt>> db) : condition(std::move(c)), cases(std::move(cs)), default_branch(std::move(db)) {}
+    void accept(Visitor& v) override {v.visit(*this);};
+};
+
+struct Return_stmt : Stmt
+{
+    Token keyword;
+    std::unique_ptr<Expr> value;
+    Return_stmt(Token k, std::unique_ptr<Expr> v) : keyword(std::move(k)) , value(std::move(v)) {}
+
+    void accept(Visitor& v) override {v.visit(*this);};
+};
+
+struct Print_stmt : Stmt
+{
+    std::unique_ptr<Expr> expression;
+    explicit Print_stmt(std::unique_ptr<Expr> e) : expression((std::move(e))){}
+    void accept(Visitor& v) override {v.visit(*this);};
+};
+
+struct Break_stmt : Stmt
+{
+    Token keyword;
+    explicit Break_stmt(Token k) : keyword(std::move(k)){}
+    void accept(Visitor& v) override {v.visit(*this);};
+};
+struct Continue_stmt : Stmt
+{
+    Token keyword;
+    explicit Continue_stmt(Token k) : keyword(std::move(k)){}
+    void accept(Visitor& v) override {v.visit(*this);};
+};
+
+struct Binary_expr : Expr
+{
+    std::unique_ptr<Expr> left;
+    Token op;
+    std::unique_ptr<Expr> right;
+
+    Binary_expr(std::unique_ptr<Expr> l , Token o, std::unique_ptr<Expr> r) : left(std::move(l)), op(std::move(o)), right(std::move(r)) {}
+    void accept(Visitor& v) override {v.visit(*this);};
+
+};
+
+struct Logical_expr : Expr
+{
+    std::unique_ptr<Expr> left;
+    Token op;
+    std::unique_ptr<Expr> right;
+
+    Logical_expr(std::unique_ptr<Expr> l , Token o , std::unique_ptr<Expr> r) : left(std::move(l)) , op(std::move(o)), right(std::move(r)) {}
+    void accept(Visitor& v) override {v.visit(*this);};
+};
+
+struct Unary_expr : Expr
+{
+    Token op;
+    std::unique_ptr<Expr> right;
+    Unary_expr(Token o , std::unique_ptr<Expr> r) : op(std::move(o)), right(std::move(r)) {}
+
+    void accept(Visitor& v) override {v.visit(*this);};
+};
+
+struct Literal_expr : Expr
+{
+    std::string value;
+    TokenType type;
+    Literal_expr(std::string v, TokenType t ) : value(std::move(v)), type(t) {}
+    void accept(Visitor& v) override {v.visit(*this);};
+};
+
+struct Variable_expr : Expr
+{
+    Token name;
+    explicit Variable_expr(Token n) : name(std::move(n)) {}
+    void accept(Visitor& v) override {v.visit(*this);};
+};
+
+struct Assign_expr : Expr
+{
+    std::unique_ptr<Expr> target;
+    Token op;
+    std::unique_ptr<Expr> value;
+
+    Assign_expr(std::unique_ptr<Expr> t, Token o, std::unique_ptr<Expr> v) : target(std::move(t)), op(std::move(o)) , value(std::move(v)) {}
+    void accept(Visitor& v) override {v.visit(*this);};
+};
+
+struct Call_expr : Expr
+{
+    std::unique_ptr<Expr> call;
+    Token paren;//'(' token
+    std::vector<std::unique_ptr<Expr>> arguments;
+
+    Call_expr(std::unique_ptr<Expr> c, Token p, std::vector<std::unique_ptr<Expr>> a) : call(std::move(c)), paren(std::move(p)), arguments(std::move(a)) {}
+    void accept(Visitor& v) override {v.visit(*this);};
+};
+struct Array_expr : Expr
+{
+    std::vector<std::unique_ptr<Expr>> elements;
+    explicit Array_expr(std::vector<std::unique_ptr<Expr>> e) : elements((std::move(e))) {}
+    void accept(Visitor& v) override {v.visit(*this);};
+};
+
+struct Index_expr : Expr
+{
+    std::unique_ptr<Expr> object;
+    Token bra;//'[' token
+    std::unique_ptr<Expr> index;
+
+    Index_expr(std::unique_ptr<Expr> o, Token b, std::unique_ptr<Expr> i) : object(std::move(o)), bra(std::move(b)) , index(std::move(i)) {}
+    void accept(Visitor& v) override {v.visit(*this);};
+};
+
+struct Primitive_type : Type
+{
+    TokenType kind;
+    explicit Primitive_type(TokenType k) : kind(k){}
+
+};
+
+struct Vector_type : Type
+{
+    std::unique_ptr<Type> element_type;
+    explicit Vector_type(std::unique_ptr<Type> e) : element_type(std::move(e)){}
+
+
+};
+
+struct Array_type : Type
+{
+    std::unique_ptr<Type> element_type;
+    size_t size;
+
+    Array_type(std::unique_ptr<Type> e, size_t s) : element_type(std::move(e)), size(s) {}
+
+};
+
+struct Pointer_type : Type
+{
+    std::unique_ptr<Type> pointe;
+    explicit Pointer_type(std::unique_ptr<Type> p) : pointe(std::move(p)) {}
+
+};
+
+struct Reference_type : Type
+{
+    std::unique_ptr<Type> refer;
+    explicit Reference_type(std::unique_ptr<Type> r) : refer(std::move(r)) {}
+
+};
