@@ -34,6 +34,11 @@ enum class TokenType {
     Agar,//if
     Nhi_Tou,//else
     Do,
+    INCLUDE,
+    FROM,
+    C,
+    CPP,
+    PYTHON,
     Until,//while
     Give_Back,//return
     Dikhao,//print

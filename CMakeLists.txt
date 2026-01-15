@@ -11,11 +11,15 @@ set(SOURCES
         src/lexer/lexer.hpp
         src/lexer/tokens.hpp
         src/ast/ast.hpp
-        waste.cpp
+        src/parser/parser.hpp
 )
 
 # FIXED: Renamed target from 'STK' back to 'Cpp' to match your build configuration
 add_executable(Cpp ${SOURCES})
 
 # Add the include directory so main.cpp can find "lexer.hpp"
-target_include_directories(Cpp PRIVATE src/lexer)
+target_include_directories(Cpp PRIVATE
+        src/lexer
+        src/ast
+        src/parser
+)

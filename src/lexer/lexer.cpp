@@ -17,7 +17,7 @@ inline bool is_alnum(char c)
 {
     return std::isalnum(static_cast<unsigned char>(c));
 }
-const std::unordered_map<std::string_view , TokenType> Lexer::keywords ={
+const std::unordered_map<std::string_view , TokenType> Lexer::keywords = {
     {"let" , TokenType::Assume},
     {"function" , TokenType::Function},
     {"if", TokenType::Agar},
@@ -40,12 +40,17 @@ const std::unordered_map<std::string_view , TokenType> Lexer::keywords ={
     {"bool", TokenType::Bool_Type},
     {"float", TokenType::Float_Type},
     {"class" , TokenType::Class},
-    {"Inherit", TokenType::Inherit},
-    {"This" , TokenType::This},
-    {"New", TokenType::New},
-    {"Public", TokenType::Public},
-    {"Private" , TokenType::Private},
-    {"Protected", TokenType::Protected}
+    {"inherit", TokenType::Inherit},
+    {"this" , TokenType::This},
+    {"new", TokenType::New},
+    {"public", TokenType::Public},
+    {"private" , TokenType::Private},
+    {"protected", TokenType::Protected},
+    {"include", TokenType::INCLUDE},
+    {"from", TokenType::FROM},
+    {"C", TokenType::C},
+    {"CPP", TokenType::CPP},
+    {"PYTHON", TokenType::PYTHON}
 
 };
 

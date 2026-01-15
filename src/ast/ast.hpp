@@ -5,6 +5,7 @@
 #include <memory>
 #include <string>
 
+struct Include_stmt;
 struct Block_stmt;
 struct Var_stmt;
 struct Func_stmt;
@@ -70,6 +71,7 @@ public:
     virtual void visit(Class_stmt& stmt) = 0;
     virtual void visit(Field_stmt& stmt) = 0;
     virtual void visit(Method_stmt& stmt) = 0;
+    virtual void visit(Include_stmt& stmt) = 0;
     virtual void visit(Member_expr& expr) = 0;
     virtual void visit(This_expr& expr) = 0;
     virtual void visit(New_expr& expr) = 0;
@@ -114,6 +116,12 @@ enum class Access_level
     Public,
     Protected,
     Private
+};
+enum class Foreign_lang
+{
+    C,
+    CPP,
+    PYTHON
 };
 
 struct Block_stmt : Stmt
@@ -420,3 +428,10 @@ struct Class_type : Type
     void accept(Visitor& v) override {v.visit(*this);};
 };
 
+struct Include_stmt : Stmt
+{
+    Foreign_lang lang;
+    std::string module;
+    Include_stmt(Foreign_lang l , std::string m) : lang(l) , module(std::move(m)) {}
+    void accept(Visitor& v) override {v.visit(*this);};
+};
